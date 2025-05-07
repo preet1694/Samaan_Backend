@@ -9,6 +9,8 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/payout")
 public class PayoutController {
@@ -20,7 +22,7 @@ public class PayoutController {
     private String razorpaySecret;
 
     @Value("${razorpayx.account}")
-    private String razorpayAccountNumber; // Add in application.properties
+    private String razorpayAccountNumber;
 
     private final PayoutRepository payoutRepo;
 
@@ -45,7 +47,6 @@ public class PayoutController {
 
             HttpEntity<String> contactEntity = new HttpEntity<>(contactRequest.toString(), headers);
             ResponseEntity<String> contactResponse = restTemplate.postForEntity("https://api.razorpay.com/v1/contacts", contactEntity, String.class);
-
             String contactId = new JSONObject(contactResponse.getBody()).getString("id");
 
             // 2. Create Fund Account
@@ -60,7 +61,6 @@ public class PayoutController {
 
             HttpEntity<String> fundEntity = new HttpEntity<>(fundAccountRequest.toString(), headers);
             ResponseEntity<String> fundResponse = restTemplate.postForEntity("https://api.razorpay.com/v1/fund_accounts", fundEntity, String.class);
-
             String fundAccountId = new JSONObject(fundResponse.getBody()).getString("id");
 
             // 3. Create Payout
@@ -74,7 +74,16 @@ public class PayoutController {
             payoutRequest.put("queue_if_low_balance", true);
             payoutRequest.put("reference_id", "payout_" + System.currentTimeMillis());
 
-            HttpEntity<String> payoutEntity = new HttpEntity<>(payoutRequest.toString(), headers);
+            // Generate a consistent or random UUID for idempotency
+            String idempotencyKey = UUID.randomUUID().toString(); // safer for one-time payouts
+            // OR: String idempotencyKey = "payout-" + dto.getEmail() + "-" + dto.getAmount();
+
+            HttpHeaders payoutHeaders = new HttpHeaders();
+            payoutHeaders.setContentType(MediaType.APPLICATION_JSON);
+            payoutHeaders.setBasicAuth(razorpayKey, razorpaySecret);
+            payoutHeaders.set("X-Payout-Idempotency", idempotencyKey);
+
+            HttpEntity<String> payoutEntity = new HttpEntity<>(payoutRequest.toString(), payoutHeaders);
             ResponseEntity<String> payoutResponse = restTemplate.postForEntity("https://api.razorpay.com/v1/payouts", payoutEntity, String.class);
 
             JSONObject payoutJson = new JSONObject(payoutResponse.getBody());
