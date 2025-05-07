@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -147,7 +148,16 @@ public class TripController {
     public List<Trip> getSenderRatings(@PathVariable String senderEmail) {
         return tripRepository.findBySenderEmailAndRatingNotNull(senderEmail);
     }
+    @PostMapping("/completed/byCarrier")
+    public ResponseEntity<List<Trip>> getCompletedTripsByCarrier(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        if (email == null || email.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
 
+        List<Trip> completedTrips = tripService.getCompletedTripsByCarrierEmail(email);
+        return ResponseEntity.ok(completedTrips);
+    }
     @PostMapping("/select")
     public ResponseEntity<String> selectTrip(@RequestBody SelectionRequest request) {
         Optional<Trip> optionalTrip = tripRepository.findById(request.getTripId());

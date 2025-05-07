@@ -59,4 +59,7 @@ public class TripService {
 
         return null; 
     }
+    public List<Trip> getCompletedTripsByCarrierEmail(String email) {
+        return tripRepository.findByEmailAndCarrierCompletedTrue(email);
+    }
 }

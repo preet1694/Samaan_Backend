@@ -21,4 +21,5 @@ public interface TripRepository extends MongoRepository<Trip, String> {
 
     List<Trip> findBySenderEmailAndSenderSelectedAndCarrierCompleted(String senderEmail, boolean senderSelected,
             boolean carrierCompleted);
+    List<Trip> findByEmailAndCarrierCompletedTrue(String carrierEmail);
 }
