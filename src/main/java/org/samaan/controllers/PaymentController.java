@@ -80,63 +80,66 @@ public class PaymentController {
 
     @PostMapping("/verify")
     public ResponseEntity<String> verifyPayment(@RequestBody Map<String, String> payload) {
-        String tripId = payload.get("tripId"); // Add this line to get tripId from the payload
+        System.out.println("Received payload: " + payload);  // 🔍 Debug print
+
+        String tripId = payload.get("tripId");
+        String orderId = payload.get("razorpayOrderId");
+        String paymentId = payload.get("razorpayPaymentId");
+        String signature = payload.get("razorpaySignature");
+
+        System.out.println("tripId: " + tripId);
+        System.out.println("orderId: " + orderId);
+        System.out.println("paymentId: " + paymentId);
+        System.out.println("signature: " + signature);
+
+        if (tripId == null || orderId == null || paymentId == null || signature == null) {
+            return ResponseEntity.badRequest().body("Missing one or more required fields in the payload");
+        }
+
         Optional<Trip> optionalTrip = tripRepository.findById(tripId);
         if (optionalTrip.isEmpty()) return ResponseEntity.badRequest().body("Trip not found");
 
         Trip trip = optionalTrip.get();
 
         try {
-            String orderId = payload.get("razorpayOrderId");
-            String paymentId = payload.get("razorpayPaymentId");
-            String signature = payload.get("razorpaySignature");
-
             String generatedSignature = hmacSHA256(orderId + "|" + paymentId, razorpaySecret);
-
             if (!generatedSignature.equals(signature)) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid payment signature");
             }
 
-            // Optionally store payment in Payment model
             PaymentDetails payment = new PaymentDetails();
             payment.setOrderId(orderId);
             payment.setPaymentId(paymentId);
             payment.setTripId(tripId);
             payment.setStatus("SUCCESS");
-            payment.setPaidAmount(trip.getPrice()); // fetch from trip model
+            payment.setPaidAmount(trip.getPrice());
             paymentRepository.save(payment);
-
+            trip.setPaid(true);
+            trip.setPaidAmount(trip.getPrice());
+            trip.setRazorpayPaymentId(paymentId);
+            tripRepository.save(trip);
+            trip.setPaymentDate(LocalDate.now().toString());
             return ResponseEntity.ok("Payment verified successfully");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Verification failed: " + e.getMessage());
         }
     }
 
+
     private String hmacSHA256(String data, String secret) throws Exception {
         Mac mac = Mac.getInstance("HmacSHA256");
         SecretKeySpec secretKeySpec = new SecretKeySpec(secret.getBytes(), "HmacSHA256");
         mac.init(secretKeySpec);
         byte[] hash = mac.doFinal(data.getBytes());
-        return Base64.getEncoder().encodeToString(hash);
-    }
 
+        // Convert to hex (not Base64)
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : hash) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) hexString.append('0');
+            hexString.append(hex);
+        }
 
-    @PostMapping("/confirm")
-    public ResponseEntity<?> confirmPayment(
-            @RequestParam String tripId,
-            @RequestParam String razorpayPaymentId,
-            @RequestParam double amount
-    ) {
-        Optional<Trip> optionalTrip = tripRepository.findById(tripId);
-        if (optionalTrip.isEmpty()) return ResponseEntity.badRequest().body("Trip not found");
-
-        Trip trip = optionalTrip.get();
-        trip.setPaid(true);
-        trip.setPaidAmount(amount);
-        trip.setRazorpayPaymentId(razorpayPaymentId);
-        trip.setPaymentDate(LocalDate.now().toString());
-
-        tripRepository.save(trip);
-        return ResponseEntity.ok("Payment confirmed and saved.");
+        return hexString.toString();
     }
 }
