@@ -113,6 +113,7 @@ public class PaymentController {
             payment.setTripId(tripId);
             payment.setStatus("SUCCESS");
             payment.setPaidAmount(trip.getPrice());
+            payment.setSenderEmail(trip.getSenderEmail());
             paymentRepository.save(payment);
             trip.setPaid(true);
             trip.setPaidAmount(trip.getPrice());
