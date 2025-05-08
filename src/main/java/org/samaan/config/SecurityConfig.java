@@ -32,6 +32,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/register").permitAll()
                         .requestMatchers("/api/users/getByEmail").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/otp/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/healthz").permitAll()
                         .anyRequest().authenticated()
