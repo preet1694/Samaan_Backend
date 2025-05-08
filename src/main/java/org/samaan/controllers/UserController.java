@@ -20,6 +20,9 @@ public class UserController {
     private JwtService jwtService;
 
     @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
     private UserRepository userRepository;
 
     @GetMapping("/name")
@@ -39,6 +42,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
         }
 
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         
         userRepository.save(user);
         response.put("message", "User registered successfully");
@@ -66,8 +70,8 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Please log in using Google"));
         }
 
-        if (!user.getPassword().equals(password)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid email or password"));
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid email or password"));
         }
 
 
