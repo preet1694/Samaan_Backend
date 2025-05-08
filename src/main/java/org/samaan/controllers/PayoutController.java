@@ -43,7 +43,6 @@ public class PayoutController {
             contactRequest.put("name", dto.getName());
             contactRequest.put("email", dto.getEmail());
             contactRequest.put("type", "employee");
-            contactRequest.put("reference_id", "contact_" + System.currentTimeMillis());
 
             HttpEntity<String> contactEntity = new HttpEntity<>(contactRequest.toString(), headers);
             ResponseEntity<String> contactResponse = restTemplate.postForEntity("https://api.razorpay.com/v1/contacts", contactEntity, String.class);
@@ -57,7 +56,6 @@ public class PayoutController {
             fundAccountRequest.put("contact_id", contactId);
             fundAccountRequest.put("account_type", "vpa");
             fundAccountRequest.put("vpa", upiDetails);
-            fundAccountRequest.put("reference_id", "fund_" + System.currentTimeMillis());
 
             HttpEntity<String> fundEntity = new HttpEntity<>(fundAccountRequest.toString(), headers);
             ResponseEntity<String> fundResponse = restTemplate.postForEntity("https://api.razorpay.com/v1/fund_accounts", fundEntity, String.class);
@@ -72,7 +70,6 @@ public class PayoutController {
             payoutRequest.put("mode", "UPI");
             payoutRequest.put("purpose", "payout");
             payoutRequest.put("queue_if_low_balance", true);
-            payoutRequest.put("reference_id", "payout_" + System.currentTimeMillis());
 
             // Generate a consistent or random UUID for idempotency
             String idempotencyKey = UUID.randomUUID().toString(); // safer for one-time payouts
