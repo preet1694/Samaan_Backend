@@ -4,6 +4,7 @@ package org.samaan.controllers;
 import org.samaan.model.User;
 import org.samaan.repositories.UserRepository;
 import org.samaan.services.JwtService;
+import org.samaan.config.AppConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
