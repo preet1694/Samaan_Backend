@@ -22,15 +22,30 @@ public class WalletController {
     @GetMapping("/{userId}")
     public ResponseEntity<?> getWalletByUserId(@PathVariable String userId) {
         Wallet wallet = walletService.getWalletByUserId(userId);
-        return ResponseEntity.ok(wallet);
+        if (wallet != null) {
+            return ResponseEntity.ok(wallet);
+        } else {
+            return ResponseEntity.badRequest().body("Wallet not found");
+        }
     }
 
-    @PutMapping("/{userId}/balance")
+    @PutMapping("/{userId}/updatebalance")
     public ResponseEntity<?> updateBalance(@PathVariable String userId, @RequestParam double amount) {
         Wallet updatedWallet = walletService.updateBalance(userId, amount);
         if (updatedWallet != null) {
             return ResponseEntity.ok(updatedWallet);
+        } else {
+            return ResponseEntity.badRequest().body("Wallet not found");
         }
-        return ResponseEntity.badRequest().body("Wallet not found");
+    }
+
+    @GetMapping("/{userId}/balance")
+    public ResponseEntity<?> getWalletBalance(@PathVariable String userId) {
+        Double balance = walletService.getWalletBalance(userId);
+        if (balance != null) {
+            return ResponseEntity.ok().body(balance);
+        } else {
+            return ResponseEntity.badRequest().body("Wallet not found");
+        }
     }
 }
